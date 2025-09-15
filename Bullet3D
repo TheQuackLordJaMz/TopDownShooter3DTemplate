@@ -1,0 +1,24 @@
+using UnityEngine;
+
+public class Bullet : MonoBehaviour
+{
+    [Range(1, 50)]
+    [SerializeField] private float speed = 20f;        // Bullet speed
+
+    [Range(1, 10)]
+    [SerializeField] private float lifeTime = 3f;      // Destroy after X seconds
+
+    private Rigidbody rb;                              // 3D Rigidbody
+
+    private void Start()
+    {
+        rb = GetComponent<Rigidbody>();
+        Destroy(gameObject, lifeTime);
+    }
+
+    private void FixedUpdate()
+    {
+        // In 3D, forward is usually the Z axis (transform.forward)
+        rb.linearVelocity = transform.forward * speed;
+    }
+}
