@@ -1,0 +1,83 @@
+using UnityEngine;
+
+public class Enemy : MonoBehaviour
+{
+    // Reference to the player's transform (will be set when found)
+    public Transform target;
+
+    // Speed of enemy movement
+    [SerializeField] private float speed = 3f;
+
+    // Rigidbody component used for physics-based movement
+    [SerializeField] private Rigidbody rb;
+
+    // Speed at which the enemy rotates towards the target
+    [SerializeField] private float rotateSpeed = 2.5f;
+
+    private void Start()
+    {
+        // Get Rigidbody component attached to this GameObject
+        // This ensures rb is never null, even if not set in the Inspector
+        rb = GetComponent<Rigidbody>();
+    }
+
+    private void Update()
+    {
+        // If no target is assigned, try to find one
+        if (!target)
+        {
+            GetTarget();
+        }
+        else
+        {
+            // If target exists, rotate towards it
+            RotateTowardsTarget();
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        // Continuously move forward in the direction the enemy is facing
+        rb.linearVelocity = transform.forward * speed;
+    }
+
+    // Attempts to find the player in the scene using tag "Player"
+    void GetTarget()
+    {
+        if (GameObject.FindGameObjectWithTag("Player"))
+        {
+            // Assign the player's transform as the target
+            target = GameObject.FindGameObjectWithTag("Player").transform;
+        }
+    }
+
+    // Rotates enemy smoothly towards the player
+    void RotateTowardsTarget()
+    {
+        // Get direction vector from enemy to target
+        Vector3 targetDirection = target.position - transform.position;
+
+        // Create a rotation based on this direction
+        Quaternion targetRotation = Quaternion.LookRotation(targetDirection);
+
+        // Smoothly rotate from current rotation to target rotation
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotateSpeed * Time.deltaTime);
+    }
+
+    // Handles collisions with other objects
+    private void OnCollisionEnter(Collision other)
+    {
+        // If colliding with the player
+        if (other.gameObject.CompareTag("Player"))
+        {
+            Destroy(other.gameObject); // Destroy the player
+            target = null; // Reset target to force reacquisition later
+        }
+        // If colliding with a bullet
+        else if (other.gameObject.CompareTag("Bullet"))
+        {
+            Destroy(other.gameObject); // Destroy the bullet
+            Destroy(gameObject); // Destroy this enemy
+        }
+    }
+}
