@@ -1,0 +1,77 @@
+using UnityEngine;
+
+public class Player : MonoBehaviour
+{
+    [SerializeField] private float speed = 5f;          // Movement speed
+    [SerializeField] private Rigidbody rb;              // 3D Rigidbody
+
+    private float moveX;                                // Input left/right
+    private float moveZ;                                // Input forward/back (Z axis)
+
+    [SerializeField] private GameObject bullet;         // Bullet prefab
+    [SerializeField] private Transform firePoint;       // Position to spawn bullets
+
+    [Range(0.1f, 1f)]
+    [SerializeField] private float fireRate = 0.5f;     // Time between shots
+    private float fireTimer;                            // Shot cooldown timer
+
+    private Vector3 mousePos;                           // Mouse world position
+   // public GameObject aimCursor;                        // Custom cursor
+
+    private Camera mainCam;
+
+    private void Start()
+    {
+        rb = GetComponent<Rigidbody>();                 // Get Rigidbody
+        mainCam = Camera.main;
+
+       // Cursor.visible = false;                         // Hide system cursor
+       // if (aimCursor != null) Instantiate(aimCursor);  // Spawn custom cursor
+    }
+
+    private void Update()
+    {
+        // Get movement input (X/Z plane for 3D top-down)
+        moveX = Input.GetAxisRaw("Horizontal");
+        moveZ = Input.GetAxisRaw("Vertical");
+
+        // Raycast from mouse to ground plane
+        Ray ray = mainCam.ScreenPointToRay(Input.mousePosition);
+        Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
+
+        if (groundPlane.Raycast(ray, out float enter))
+        {
+            mousePos = ray.GetPoint(enter);
+
+            // Rotate player toward mouse (on Y axis only)
+            Vector3 lookDir = (mousePos - transform.position).normalized;
+            lookDir.y = 0; // Ignore vertical difference
+            if (lookDir != Vector3.zero)
+                transform.rotation = Quaternion.LookRotation(lookDir);
+        }
+
+        // Shooting
+        if (Input.GetMouseButton(0) && fireTimer <= 0f)
+        {
+            Shoot();
+            fireTimer = fireRate;
+        }
+        else
+        {
+            fireTimer -= Time.deltaTime;
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        // Move player in XZ plane
+        Vector3 moveDir = new Vector3(moveX, 0f, moveZ).normalized;
+        rb.linearVelocity = moveDir * speed + new Vector3(0, rb.linearVelocity.y, 0);
+    }
+
+    private void Shoot()
+    {
+        // Spawn bullet at fire point
+        Instantiate(bullet, firePoint.position, firePoint.rotation);
+    }
+}
